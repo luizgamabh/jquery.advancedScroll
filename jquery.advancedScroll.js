@@ -4,20 +4,28 @@
 
 (function($) {
     $.fn.advancedScroll = function() {
-        var lastScrollTop = 0;
+        var touchable = (('ontouchstart' in window) || window.DocumentTouch && document instanceof DocumentTouch);
+        var lastMeasurePosition = 0;
+        var scrollTop;
         return this.each(function() {
             var _this = this,
                 $this = $(_this);
             if (_this.self != window.self) return; // Allows only window to use this plugin
-            lastScrollTop = $this.scrollTop();
-            $this.on("scroll touchmove", function(event) {
-                var actualScrollTop = $this.scrollTop();
-                if (actualScrollTop > lastScrollTop) {
-                    $this.trigger("scrolldown", [actualScrollTop]);
+            lastMeasurePosition = touchable ? 0 : $this.scrollTop();
+            var bestEventForThisDevice = (touchable ? "touchmove" : "scroll");
+            $this.on(bestEventForThisDevice, function(event) {
+                var scrollTop = $this.scrollTop(),
+                    actualMeasurePosition = event.originalEvent.touches ? $this.scrollTop() - event.originalEvent.touches[0].pageY : scrollTop,
+                    max = $(document).height() - $(window).height();
+                scrollTop = scrollTop <= max ? scrollTop : max;
+                if (actualMeasurePosition > lastMeasurePosition) {
+                    $("#res").html("Rolou para baixo: " + scrollTop + " - " + max);
+                    $this.trigger("scrolldown", [actualMeasurePosition]);
                 } else {
-                    $this.trigger("scrollup", [actualScrollTop]);
+                    $("#res").html("Rolou para cima: " + scrollTop + " - " + max);
+                    $this.trigger("scrollup", [actualMeasurePosition]);
                 }
-                lastScrollTop = actualScrollTop;
+                lastMeasurePosition = actualMeasurePosition;
             });
         });
     };
