@@ -19,10 +19,8 @@
                     max = $(document).height() - $(window).height();
                 scrollTop = scrollTop <= max ? scrollTop : max;
                 if (actualMeasurePosition > lastMeasurePosition) {
-                    $("#res").html("Rolou para baixo: " + scrollTop + " - " + max);
                     $this.trigger("scrolldown", [actualMeasurePosition]);
                 } else {
-                    $("#res").html("Rolou para cima: " + scrollTop + " - " + max);
                     $this.trigger("scrollup", [actualMeasurePosition]);
                 }
                 lastMeasurePosition = actualMeasurePosition;
