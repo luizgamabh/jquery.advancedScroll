@@ -4,27 +4,75 @@
 
 (function($) {
     $.fn.advancedScroll = function() {
-        var touchable = (('ontouchstart' in window) || window.DocumentTouch && document instanceof DocumentTouch);
-        var lastMeasurePosition = 0;
-        var scrollTop;
         return this.each(function() {
             var _this = this,
-                $this = $(_this);
+                $this = $(_this),
+                lastScrollTop = $this.scrollTop(),
+                startX,
+                startY,
+                deltaParam = 20,
+                touchable = (('ontouchstart' in window) || window.DocumentTouch && document instanceof DocumentTouch);
+
             if (_this.self != window.self) return; // Allows only window to use this plugin
-            lastMeasurePosition = touchable ? 0 : $this.scrollTop();
-            var bestEventForThisDevice = (touchable ? "touchmove" : "scroll");
-            $this.on(bestEventForThisDevice, function(event) {
-                var scrollTop = $this.scrollTop(),
-                    actualMeasurePosition = event.originalEvent.touches ? $this.scrollTop() - event.originalEvent.touches[0].pageY : scrollTop,
-                    max = $(document).height() - $(window).height();
-                scrollTop = scrollTop <= max ? scrollTop : max;
-                if (actualMeasurePosition > lastMeasurePosition) {
-                    $this.trigger("scrolldown", [actualMeasurePosition]);
+
+            if (touchable) {
+                $this.bind('touchstart', touchstart);
+                $this.bind('touchend', touchend);
+            } else {
+                $this.on("scroll", scroll);
+            }
+
+            // Handlers
+            function scroll(event) {
+                var actualScrollTop = $this.scrollTop();
+                if (actualScrollTop > lastScrollTop) {
+                    $this.trigger("scrolldown", [actualScrollTop]);
                 } else {
-                    $this.trigger("scrollup", [actualMeasurePosition]);
+                    $this.trigger("scrollup", [actualScrollTop]);
                 }
-                lastMeasurePosition = actualMeasurePosition;
-            });
+                lastScrollTop = actualScrollTop;
+            };
+
+            function touchstart(event) {
+                var touches = event.originalEvent.touches;
+                if (touches && touches.length) {
+                    startX = touches[0].pageX;
+                    startY = touches[0].pageY;
+                    $this.bind('touchmove', touchmove);
+                }
+            };
+
+            function touchmove(event) {
+                var touches = event.originalEvent.touches;
+
+                if (touches && touches.length && touches[0].pageX >1) {
+                    var deltaX = startX - touches[0].pageX;
+                    var deltaY = startY - touches[0].pageY;
+                    if(deltaX == 0){}
+                    if (deltaX >= deltaParam) {
+                        $this.trigger("scrolleft", [$this.scrollLeft()]);
+                    }else
+                    if (deltaX <= -deltaParam) {
+                        $this.trigger("scrollright", [$this.scrollLeft()]);
+                    } else
+                    if (deltaY >= deltaParam) {
+                        $this.trigger("scrolldown", [$this.scrollTop()]);
+                    }else
+                    if (deltaY <= -deltaParam) {
+                        $this.trigger("scrollup", [$this.scrollTop()]);
+                    }
+                    if (Math.abs(deltaX) >= deltaParam || Math.abs(deltaY) >= deltaParam) {
+                        $this.unbind('touchmove', touchmove);
+                        //return false;
+                    }
+
+                }
+                //event.preventDefault();
+            };
+
+            function touchend(event) {
+                $this.unbind('touchmove', touchmove);
+            };
         });
     };
 })(jQuery);
